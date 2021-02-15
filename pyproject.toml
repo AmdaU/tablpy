@@ -4,6 +4,7 @@ version = "0.0.0"
 description = "A package that makes importing and handeling data y"
 authors = ["AmdaUwU <jbat2000@gmail.com>"]
 license = "MIT"
+homepage = "https://github.com/AmdaUwU/tablpy"
 
 [tool.poetry.dependencies]
 python = "^3.8"
