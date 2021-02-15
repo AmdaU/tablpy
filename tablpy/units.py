@@ -5,19 +5,21 @@ prefixs = {"y": 1e-24, "z": 1e-21, "a": 1e-18, "f": 1e-15, "p": 1e-12, "n": 1e-9
            "": 1, "h": 1e2, "k": 1e3, "M": 1e6, "G": 1e9, "T": 1e12, "P": 1e15,
            "B": 1e15, "E": 1e18, "Z": 1e21, "Y": 1e24}
 SI = sp.symbols("g s m K A mol cd")
-SIB = sp.symbols("Hz newton Pa J W C V F ohms S H Wb T H °C lm lx Bq Gy Sv kat pourcent")
-defs = ["1/s", "1000*g*(m/s**2)", "1000*g/m/s**2", "1000*g*m**2/s**2", "1000*g*m**2/s**3", "s*A", "1000*g*m**2/s**3/A",
-        "A**2*s**4/(1000*g)/m**2", "1000*g*m**2/s**3/A**2", "A**2/(1000*g)/m**2*s**3", "m**2*(1000*g)/s**2/A**2"]
+SIB = sp.symbols("Hz newton Pa J W C V F ohms S H Wb T H °C lm lx Bq Gy Sv kat"
+                 "percent")
+defs = ["1/s", "1000*g*(m/s**2)", "1000*g/m/s**2", "1000*g*m**2/s**2",
+        "1000*g*m**2/s**3", "s*A", "1000*g*m**2/s**3/A",
+        "A**2*s**4/(1000*g)/m**2", "1000*g*m**2/s**3/A**2",
+        "A**2/(1000*g)/m**2*s**3", "m**2*(1000*g)/s**2/A**2"]
 
 SIBT = dict(zip(SIB, sp.sympify(defs)))
-
 
 
 class unit:
     def __init__(self, s):
         self.str = s
         s = s.replace("N", "newton").replace(
-            "Ω", "ohms").replace("\Omega", "ohms").replace("%","pourcent")
+            "Ω", "ohms").replace(r"\Omega", "ohms").replace("%", "percent")
         self.symb = sp.sympify(s)
         self.SIval = self.symb
         self.prefix = None
@@ -95,7 +97,7 @@ class unit:
             >>> print(a)
             >>> N/kg
         """
-        if type(nunit) == type(" "):
+        if isinstance(nunit, str):
             nunit = unit(nunit)
         factor = nunit.SIval / self.SIval
         if not len(factor.free_symbols):
@@ -103,7 +105,8 @@ class unit:
             self.str = nunit.str
             self.symb = nunit.symb
         else:
-            print(f"La converstion d'unité à échoué car les {self.str} et les {nunit.str} sont incompatibles")
+            print(f"La converstion d'unité à échoué car les {self.str} et les"
+                  f"{nunit.str} sont incompatibles")
             factor = 1
         return 1 / factor
 

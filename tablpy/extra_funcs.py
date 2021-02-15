@@ -113,3 +113,7 @@ def fastPlot(file):
     """plots the two first colums of a data file"""
     array = np.genfromtxt(file, skip_header=True, delimiter="\t")
     plt.plot(array[:, 0], array[:, 1])
+
+
+def roll(values, min, max):
+    return ((values+min) % max)-min
