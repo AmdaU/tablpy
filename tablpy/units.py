@@ -1,4 +1,5 @@
 import sympy as sp
+from . import extra_funcs as ef
 
 prefixs = {"y": 1e-24, "z": 1e-21, "a": 1e-18, "f": 1e-15, "p": 1e-12, "n": 1e-9,
            "\\mu": 1e-6, "μ": 1e-6, "u": 1e-6, "m": 1e-3, "c": 1e-2, "d": 1e-1,
@@ -20,7 +21,7 @@ class unit:
         self.str = s
         s = s.replace("N", "newton").replace(
             "Ω", "ohms").replace(r"\Omega", "ohms").replace("%", "percent")
-        self.symb = sp.sympify(s)
+        self.symb = sp.sympify(ef.preSymp(s))
         self.SIval = self.symb
         self.prefix = None
         for var in self.SIval.free_symbols:

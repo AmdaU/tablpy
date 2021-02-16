@@ -116,4 +116,4 @@ def fastPlot(file):
 
 
 def roll(values, min, max):
-    return ((values+min) % max)-min
+    return ((values-min) % (max-min))+min

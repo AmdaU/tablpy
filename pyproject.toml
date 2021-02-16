@@ -1,9 +1,10 @@
 [tool.poetry]
 name = "tablpy"
-version = "0.1.1"
-description = "A package that makes importing and handeling data y"
+version = "0.1.2"
+description = "A package that makes importing and handeling data"
 authors = ["AmdaUwU <jbat2000@gmail.com>"]
 license = "MIT"
+readme = "README.md"
 homepage = "https://github.com/AmdaUwU/tablpy"
 
 [tool.poetry.dependencies]

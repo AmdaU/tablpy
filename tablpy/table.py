@@ -152,7 +152,7 @@ class table:
         pre_dict = dict(zip([f"dummy{x}" for x in range(
             len(expression.free_symbols))], map(str, expression.free_symbols)))
         expression = expression.subs({v: k for k, v in pre_dict.items()})
-        lamb = sp.lambdify(expression.free_symbols, expression)
+        lamb = sp.lambdify(tuple(expression.free_symbols), expression)
         V_dict = self.data[:].to_dict("records")
         if not NoIncert:
             expr_incert = ef.formule_incertitude(self.formulas[name])
@@ -162,7 +162,7 @@ class table:
                 ))
             expr_incert = expr_incert.subs(
                 {v: k for k, v in pre_dict_i.items()})
-            lamb_incert = sp.lambdify(expr_incert.free_symbols, expr_incert)
+            lamb_incert = sp.lambdify(tuple(expr_incert.free_symbols), expr_incert)
         # Le cacul est fait ligne par ligne, probablement très optimisable
         for i in range(len(self.data)):
             vals = V_dict[i]
