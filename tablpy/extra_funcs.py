@@ -13,7 +13,7 @@ def delt(s):
 def ax_name(tab, qty):
     s = f"${qty}$"
     if not str(tab.units[qty]) == '1':
-        s += f" ( {tab.units[qty]} )"
+        s += r" ( ${:}$ )".format(tab.units[qty])
     return s
 
 
@@ -113,6 +113,10 @@ def fastPlot(file):
     """plots the two first colums of a data file"""
     array = np.genfromtxt(file, skip_header=True, delimiter="\t")
     plt.plot(array[:, 0], array[:, 1])
+
+
+def rejectOutliers(data, n=2):
+    return data[abs(data - np.mean(data)) < n * np.std(data)]
 
 
 def roll(values, min, max):

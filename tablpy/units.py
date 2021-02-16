@@ -75,7 +75,7 @@ class unit:
             return unit(str(1 / self.symb))
 
     def __str__(self):
-        return sp.latex(self.str)
+        return sp.latex(self.symb)
 
     def __repr__(self):
         return str(self.symb)
