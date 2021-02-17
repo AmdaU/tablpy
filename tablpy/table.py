@@ -185,12 +185,27 @@ class table:
         self.fixUnits()
 
     def delCol(self, names):
+        """Delets specified column of columns from the table"""
         if not isinstance(names, list):
             names = [names]
         for name in names:
             self.data = self.data.drop(columns=[name, ef.delt(name)])
 
     def giveUnits(self, units):
+        """
+        This allows you to associate units to your columns
+
+        Ex:
+        >>> dt = table('foo')
+        >>> dt.giveUnits({bar: "GHz"})
+
+        This useful because not only will it show up in graph and .tex talbe
+        you output, but will also be used to evaluate the units of a column
+        created with dt.newCol().
+
+        You can also use in in combination with the dt.changeUnits method to
+        make for easy unit conversion. (Only works with SI units at the moment)
+        """
         for col in self.data.columns:
             try:
                 if isinstance(units[col], str):
@@ -203,19 +218,33 @@ class table:
                     self.units[col] = unit("1")
 
     def changeUnits(self, units):
+        """
+
+        """
         for col in units:
             fact = self.units[col].to(units[col])
             self.data[col] *= float(fact)
             self.data[ef.delt(col)] *= float(fact)
 
-    def renomerCols(self, names):
-        # vars = list(sp.symbols(noms))
-        self.data.columns = [n for var in names.split(" ")
-                             for n in (var, ef.delt(var))]
+    def renameCols(self, names):
+        """
+        renames the columns of your dataTable
 
-# Combine les colonnes de valeurs et d'incertitude
-# applique de la mise en forme des données
+        (names) can either be a string with all the name separeted by spaces,
+            a dictionary mapping old name to new names or a list of new names.
+        """
+        # vars = list(sp.symbols(noms))
+        if isinstance(names, str):
+            self.data.columns = [n for var in names.split(" ")
+                                 for n in (var, ef.delt(var))]
+        if isinstance(names, dict):
+            self.data.rename(names)
+
+        if isinstance(names, list):
+                self.data.columns = names
+
     def squish(self):
+        """Combines data and uncertainty collumns into one. Used with makeGoodTable"""
         out = pd.DataFrame([])
         for col in [str(i) for i in self.data if "Delta" not in str(i)]:
             outCol = []
@@ -242,9 +271,14 @@ class table:
         return(out)
 
     # Export un ficher .tex en faisant toutes les modifications nécessaire
-    def makeGoodTable(self,name, unite=None):
+    def makeGoodTable(self, name):
+        """
+        Outputs a latex version of itself in directory named tables
+
+        (name) name of the exported file.
+        """
         try:
-            os.mkdir("tableaux")
+            os.mkdir("tables")
         except:
             pass
         self.fixUnits()
@@ -290,7 +324,16 @@ class table:
     #     plt.xlabel("$"+a+"$ "+"("+str(self.units[a])+")")
     #     plt.ylabel("$"+b+"$ "+"("+str(self.units[b])+")")
 
-    def importCol(self, name, df, index=None):
+    def importCol(self, name, dt, index=None):
+        """
+        imports a column from another table into itself
+
+        (name) name of the column to import
+
+        (dt) talbe to import from
+
+        (index) index where you want to insert the column
+        """
         if index is None:
             index = (len(self.data) - 1) / 2
         self.data.insert(index * 2, name, df[name], False)
@@ -303,6 +346,23 @@ class table:
         # plt.legend()
 
     def fit(self, func, xn, yn, show=True, maxfev=1000, **kargs):
+        """
+        return optimal parameters of a function fitted on data
+
+        Applies a fit on givens colums, interpreted as a 2D graphics
+
+        Parameters
+        ----------
+        (func) The function you want to fit your function to
+
+        (xn) The data representing the x axis.
+
+        (yn) The data representing the y axis.
+
+        (show) If True, shows the data and the fit
+
+        (maxfev) Maximum number of itteration to find optimals parameters
+        """
         x0 = kargs["x0"] if "x0" in kargs else None
         popt, pcov = curve_fit(func, *self[[xn, yn]].T, x0, maxfev=maxfev)
         if show:
