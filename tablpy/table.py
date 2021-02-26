@@ -219,6 +219,12 @@ class table:
 
     def changeUnits(self, units):
         """
+        Change the units and changing the values of the column accordingly.
+        If you want to change te units without changing the values, use the
+        .giveUnits method instead.
+
+        Ex.
+
 
         """
         for col in units:
@@ -241,7 +247,7 @@ class table:
             self.data.rename(names)
 
         if isinstance(names, list):
-                self.data.columns = names
+                self.data.columns = [n for var in names for n in (var, ef.delt(var))]
 
     def squish(self):
         """Combines data and uncertainty collumns into one. Used with makeGoodTable"""
