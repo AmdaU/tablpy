@@ -244,7 +244,12 @@ class table:
             self.data.columns = [n for var in names.split(" ")
                                  for n in (var, ef.delt(var))]
         if isinstance(names, dict):
-            self.data.rename(names)
+            keys = [n for var in names.keys()
+                    for n in (var, ef.delt(var))]
+            vals = [n for var in names.values()
+                    for n in (var, ef.delt(var))]
+            print(dict(zip(keys, vals)))
+            self.data = self.data.rename(columns=dict(zip(keys, vals)))
 
         if isinstance(names, list):
                 self.data.columns = [n for var in names for n in (var, ef.delt(var))]
