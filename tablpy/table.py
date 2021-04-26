@@ -68,11 +68,13 @@ class table:
             else:
                 self.data = pd.DataFrame(data)
         else:
-            parts = datname.split('.')
-            name = '.'.join(parts[:-1])
-            if '.' in datname:
+            paths_parts = datname.split('/')
+            if '.' in paths_parts[-1]:
+                parts = datname.split('.')
+                name = '.'.join(parts[:-1])
                 ext = parts[-1]
             else:
+                name=datname
                 possible_ext = ['xlsx', 'csv', 'txt', 'dat']
                 found = False
                 i = 0
@@ -80,17 +82,20 @@ class table:
                     if os.path.isfile(datname + '.' + possible_ext[i]):
                         found = True
                         ext = possible_ext[i]
+                        print(ext)
                     i += 1
                 if not found:
                     print("File '{}' was not found :(".format(datname))
                     return
-
+            print(ext)
             
             if ext == 'xlsx':
                 self.data = pd.read_excel(name + '.' + ext, sheet_name=sheet)
             else:
+                print(name + '.' + ext)
                 self.data = pd.read_csv(name + '.' + ext, delimiter=delimiter,
                                         skiprows=skiprows)
+                print(self.data)
 
         self.giveUnits(units)
         self.formulas = {}
