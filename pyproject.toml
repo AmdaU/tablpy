@@ -10,7 +10,7 @@ homepage = "https://github.com/AmdaUwU/tablpy"
 [tool.poetry.dependencies]
 python = "^3.8"
 pandas = "^1.2.2"
-matplotlib = "3.2"
+matplotlib = "3.3.4"
 scipy = "^1.6.0"
 sympy = "^1.7.1"
 

@@ -60,20 +60,38 @@ class table:
         np.array to this argument. The datname you specified will be ignored.
     """
     def __init__(self, datname, AutoInsert=True, units={},
-                 sheet=None, data=None, delimiter=','):
+                 sheet=None, data=None, delimiter=',', skiprows=None):
         self.units = units
         if data is not None:
             if isinstance(data, pd.DataFrame):
                 self.data = data
             else:
                 self.data = pd.DataFrame(data)
-        elif os.path.isfile(datname + ".xlsx"):
-            self.data = pd.read_excel(datname + ".xlsx", sheet_name=sheet)
-        elif os.path.isfile(datname + ".csv"):
-            self.data = pd.DataFrame(np.genfromtxt(
-                datname + ".csv", delimiter=delimiter, names=True))
         else:
-            print("Le fichier {} n'as pas été trouvé :(".format(datname))
+            parts = datname.split('.')
+            name = '.'.join(parts[:-1])
+            if '.' in datname:
+                ext = parts[-1]
+            else:
+                possible_ext = ['xlsx', 'csv', 'txt', 'dat']
+                found = False
+                i = 0
+                while not found and i < len(possible_ext):
+                    if os.path.isfile(datname + '.' + possible_ext[i]):
+                        found = True
+                        ext = possible_ext[i]
+                    i += 1
+                if not found:
+                    print("File '{}' was not found :(".format(datname))
+                    return
+
+            
+            if ext == 'xlsx':
+                self.data = pd.read_excel(name + '.' + ext, sheet_name=sheet)
+            else:
+                self.data = pd.read_csv(name + '.' + ext, delimiter=delimiter,
+                                        skiprows=skiprows)
+
         self.giveUnits(units)
         self.formulas = {}
 
@@ -350,8 +368,8 @@ class table:
         self.data.insert(index * 2, name, df[name], False)
         self.data.insert(index * 2 + 1, ef.delt(name), df[ef.delt(name)], False)
 
-    def plot(self, xn, yn, label=None):
-        plt.errorbar(*self[[xn, yn, ef.delt(yn), ef.delt(xn)]].T, ".", label=None)
+    def plot(self, xn, yn, **kwargs):
+        plt.errorbar(*self[[xn, yn, ef.delt(yn), ef.delt(xn)]].T, ".", **kwargs)
         plt.xlabel(ef.ax_name(self, xn))
         plt.ylabel(ef.ax_name(self, yn))
         # plt.legend()
@@ -392,5 +410,12 @@ class table:
         self.data.insert(pos + 1, ef.delt(name), incert)
         self.fixUnits()
 
+
+def defVal(vals):
+    for i in vals:
+        a = vals[i].split(" ")
+        exval[i] = float(a[0])
+        exval[ef.delt(i)] = float(a[1])
+        exUnis[i] = unit(a[2])
 
 # %%
