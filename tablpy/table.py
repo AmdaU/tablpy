@@ -375,7 +375,7 @@ class table:
         self.data.insert(index * 2, name, df[name], False)
         self.data.insert(index * 2 + 1, ef.delt(name), df[ef.delt(name)], False)
 
-    def plot(self, xn, yn, fig_ax = None, **kwargs):
+    def plot(self, xn, yn, fig_ax=None, **kwargs):
         if fig_ax == None:
             fig_ax = plt.figure(), plt.gca()
         fig, ax = fig_ax
@@ -384,7 +384,7 @@ class table:
         ax.set_ylabel(ef.ax_name(self, yn))
         # plt.legend()
 
-    def fit(self, func, xn, yn, show=True, maxfev=1000, **kargs):
+    def fit(self, func, xn, yn, fig_ax=None, show=True, maxfev=1000, **kargs):
         """
         return optimal parameters of a function fitted on data
 
@@ -402,13 +402,19 @@ class table:
 
         (maxfev) Maximum number of itteration to find optimals parameters
         """
+        if fig_ax == None:
+            fig_ax = plt.figure(), plt.gca()
+        fig, ax = fig_ax
         x0 = kargs["x0"] if "x0" in kargs else None
         popt, pcov = curve_fit(func, *self[[xn, yn]].T, x0, maxfev=maxfev)
+        results = np.flatten([np.array([popt, np.sqrt(pcov.diagonal())]).flatten()])
+        dt = table('', data=results)
         if show:
-            self.plot(xn, yn, label="Données")
-            plt.plot(self[xn], func(self[xn], *popt), label="fit")
-            plt.legend()
-        return popt, pcov
+            x = np.linspace(*ef.extrem(self[xn]), 1000)
+            self.plot(xn, yn, label="Données", fig_ax=fig_ax)
+            ax.plot(x, func(x, *popt), label="fit")
+            ax.legend()
+        return dt
 
     def append(self, name, data, incert=None, pos=None, units="1"):
         if pos is None:
