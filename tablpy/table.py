@@ -116,6 +116,7 @@ class table:
             if not ef.isUncertain(self.data.columns[-1]):
                 self.data.insert(len(self.data.columns), ef.delt(
                     self.data.columns[-1]), [0 for i in range(len(self.data))])
+        self.data.columns = list(map(str, self.data.columns))
 
     def __repr__(self):
         dat = [c for c in list(self.data) if 'Delta' not in c]
@@ -407,8 +408,8 @@ class table:
         fig, ax = fig_ax
         x0 = kargs["x0"] if "x0" in kargs else None
         popt, pcov = curve_fit(func, *self[[xn, yn]].T, x0, maxfev=maxfev)
-        results = np.flatten([np.array([popt, np.sqrt(pcov.diagonal())]).flatten()])
-        dt = table('', data=results)
+        results = np.array([np.array([popt, np.sqrt(pcov.diagonal())]).T.flatten()])
+        dt = table('', data=results, AutoInsert=False)
         if show:
             x = np.linspace(*ef.extrem(self[xn]), 1000)
             self.plot(xn, yn, label="Données", fig_ax=fig_ax)
