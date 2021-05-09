@@ -59,8 +59,8 @@ class table:
     (data) if you do not want to import from a data file, you can pass a
         np.array to this argument. The datname you specified will be ignored.
     """
-    def __init__(self, datname, AutoInsert=True, units={},
-                 sheet=None, data=None, delimiter=',', skiprows=None):
+    def __init__(self, datname, AutoInsert=True, units={}, sheet=None,
+                 data=None, delimiter=',', skiprows=None, noNames=False):
         self.units = units
         if data is not None:
             if isinstance(data, pd.DataFrame):
@@ -92,6 +92,12 @@ class table:
             else:
                 self.data = pd.read_csv(name + '.' + ext, delimiter=delimiter,
                                         skiprows=skiprows)
+                if noNames:
+                    names = list(map(str,range(len(self.data.columns))))
+                    self.data = pd.read_csv(name + '.' + ext,
+                                            delimiter=delimiter,
+                                            skiprows=skiprows, header=0, 
+                                            names=names)
 
         self.giveUnits(units)
         self.formulas = {}
@@ -369,10 +375,13 @@ class table:
         self.data.insert(index * 2, name, df[name], False)
         self.data.insert(index * 2 + 1, ef.delt(name), df[ef.delt(name)], False)
 
-    def plot(self, xn, yn, **kwargs):
-        plt.errorbar(*self[[xn, yn, ef.delt(yn), ef.delt(xn)]].T, ".", **kwargs)
-        plt.xlabel(ef.ax_name(self, xn))
-        plt.ylabel(ef.ax_name(self, yn))
+    def plot(self, xn, yn, fig_ax = None, **kwargs):
+        if fig_ax = None:
+            fig_ax = plt.figure(), plt.gca()
+        fig, ax = fig_ax
+        ax.errorbar(*self[[xn, yn, ef.delt(yn), ef.delt(xn)]].T, ".", **kwargs)
+        plt.set_xlabel((ef.ax_name(self, xn))
+        plt.set_ylabel((ef.ax_name(self, yn))
         # plt.legend()
 
     def fit(self, func, xn, yn, show=True, maxfev=1000, **kargs):
