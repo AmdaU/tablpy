@@ -13,7 +13,7 @@ def delt(s):
 def ax_name(tab, qty):
     s = f"${qty}$"
     if not str(tab.units[qty]) == '1':
-        s += r" ( ${:}$ )".format(tab.units[qty])
+        s += r" ( $\rm {:}$ )".format(tab.units[qty])
     return s
 
 

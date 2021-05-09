@@ -376,12 +376,12 @@ class table:
         self.data.insert(index * 2 + 1, ef.delt(name), df[ef.delt(name)], False)
 
     def plot(self, xn, yn, fig_ax = None, **kwargs):
-        if fig_ax = None:
+        if fig_ax == None:
             fig_ax = plt.figure(), plt.gca()
         fig, ax = fig_ax
         ax.errorbar(*self[[xn, yn, ef.delt(yn), ef.delt(xn)]].T, ".", **kwargs)
-        plt.set_xlabel((ef.ax_name(self, xn))
-        plt.set_ylabel((ef.ax_name(self, yn))
+        ax.set_xlabel(ef.ax_name(self, xn))
+        ax.set_ylabel(ef.ax_name(self, yn))
         # plt.legend()
 
     def fit(self, func, xn, yn, show=True, maxfev=1000, **kargs):
