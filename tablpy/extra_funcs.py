@@ -1,9 +1,9 @@
-import re
-import os
 import math
-import sympy as sp
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import os
+import re
+import sympy as sp
 
 
 def delt(s):
@@ -18,7 +18,9 @@ def ax_name(tab, qty):
 
 
 def preSymp(string):
-    """
+
+    """\n
+
     returns a string ready to be passed to Sympy.
 
     Sympy sometimes assumes the meaning of certain variables, this fuction
@@ -61,7 +63,8 @@ def roundUp(num):  # arrondis vers le haut à la bonne décimale
 
 # Détermine la formule d'incertitude pour une expression donnée
 def formule_incertitude(eq):
-    r"""
+    r"""\n
+
     Returns a sympy expression of the uncertainty associated with a formula
 
     ex:

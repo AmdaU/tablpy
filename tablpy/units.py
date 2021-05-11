@@ -1,17 +1,18 @@
-import sympy as sp
 from . import extra_funcs as ef
+import sympy as sp
 
-prefixs = {"y": 1e-24, "z": 1e-21, "a": 1e-18, "f": 1e-15, "p": 1e-12, "n": 1e-9,
-           "\\mu": 1e-6, "μ": 1e-6, "u": 1e-6, "m": 1e-3, "c": 1e-2, "d": 1e-1,
-           "": 1, "h": 1e2, "k": 1e3, "M": 1e6, "G": 1e9, "T": 1e12, "P": 1e15,
-           "B": 1e15, "E": 1e18, "Z": 1e21, "Y": 1e24}
+prefixs = {"y": 1e-24, "z": 1e-21, "a": 1e-18, "f": 1e-15, "p": 1e-12,
+           "n": 1e-9, "\\mu": 1e-6, "μ": 1e-6, "u": 1e-6, "m": 1e-3, "c": 1e-2,
+           "d": 1e-1, "": 1, "h": 1e2, "k": 1e3, "M": 1e6, "G": 1e9, "T": 1e12,
+           "P": 1e15, "B": 1e15, "E": 1e18, "Z": 1e21, "Y": 1e24}
 SI = sp.symbols("g s m K A mol cd")
-SIB = sp.symbols("Hz newton Pa J W C V F ohms S H Wb T H °C lm lx Bq Gy Sv kat"
-                 "percent")
+SIB = sp.symbols(r"Hz newton Pa J W C V F ohms S H Wb T H \AA °C lm lx Bq Gy"
+                 r"Sv kat percent")
 defs = ["1/s", "1000*g*(m/s**2)", "1000*g/m/s**2", "1000*g*m**2/s**2",
         "1000*g*m**2/s**3", "s*A", "1000*g*m**2/s**3/A",
         "A**2*s**4/(1000*g)/m**2", "1000*g*m**2/s**3/A**2",
-        "A**2/(1000*g)/m**2*s**3", "m**2*(1000*g)/s**2/A**2"]
+        "A**2/(1000*g)/m**2*s**3", "m**2*(1000*g)/s**2/A**2",
+        "0.00000000001*m"]
 
 SIBT = dict(zip(SIB, sp.sympify(defs)))
 
@@ -21,7 +22,7 @@ class unit:
         self.str = s
         s = s.replace("N", "newton").replace("Ω", "ohms")\
              .replace(r"\Omega", "ohms").replace("%", "percent")\
-             .replace('°', 'deg').replace('^\circ', 'deg')
+             .replace('°', 'deg').replace(r'^\circ', 'deg')
         self.symb = sp.sympify(ef.preSymp(s))
         self.SIval = self.symb
         self.prefix = None
@@ -78,7 +79,7 @@ class unit:
     def __str__(self):
         return sp.latex(self.symb).replace("newton", 'N')\
              .replace("ohms", r"\Omega").replace("percent", "%")\
-             .replace('deg', '^\circ')
+             .replace('deg', r'^\circ')
 
     def __repr__(self):
         return str(self.symb)
@@ -87,7 +88,8 @@ class unit:
         return unit(str(self.symb**other))
 
     def to(self, nunit):
-        """
+        """\n
+
         Convertis des unités en d'autres unités
             Agit sur l'objet lui-même et retourne le facteur de converstion
 

@@ -1,13 +1,13 @@
-import pandas as pd
-import sympy as sp
-import numpy as np
-from .units import unit
-import os
-import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
 from . import extra_funcs as ef
+from .units import unit
 from copy import deepcopy
 import inspect
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+import pandas as pd
+from scipy.optimize import curve_fit
+import sympy as sp
 
 exval, exUnis = {}, {}
 
@@ -17,7 +17,8 @@ showUncertain = True
 
 
 class table:
-    """
+    """\n
+
     The table class is the core of this package. Each table object contains
     columns of data most often imported from a .xlsx file of .csv like file.
 
@@ -76,7 +77,7 @@ class table:
                 name = '.'.join(parts[:-1])
                 ext = parts[-1]
             else:
-                name=datname
+                name = datname
                 possible_ext = ['xlsx', 'csv', 'txt', 'dat']
                 found = False
                 i = 0
@@ -88,17 +89,17 @@ class table:
                 if not found:
                     print("File '{}' was not found :(".format(datname))
                     return
-            
+
             if ext == 'xlsx':
                 self.data = pd.read_excel(name + '.' + ext, sheet_name=sheet)
             else:
                 self.data = pd.read_csv(name + '.' + ext, delimiter=delimiter,
                                         skiprows=skiprows)
                 if noNames:
-                    names = list(map(str,range(len(self.data.columns))))
+                    names = list(map(str, range(len(self.data.columns))))
                     self.data = pd.read_csv(name + '.' + ext,
                                             delimiter=delimiter,
-                                            skiprows=skiprows, header=0, 
+                                            skiprows=skiprows, header=0,
                                             names=names)
 
         self.giveUnits(units)
@@ -135,7 +136,8 @@ class table:
 
     def newCol(self, name, expression, extra=None, pos=None, NoIncert=False,
                units=None):
-        """
+        """\n
+
         This methode allows you to add a new columns to your table given a
         certain formula. The uncertainty on the new values and units will be
         automatically taken care of.
@@ -190,7 +192,8 @@ class table:
                 ))
             expr_incert = expr_incert.subs(
                 {v: k for k, v in pre_dict_i.items()})
-            lamb_incert = sp.lambdify(tuple(expr_incert.free_symbols), expr_incert)
+            lamb_incert = sp.lambdify(tuple(expr_incert.free_symbols),
+                                      expr_incert)
         # Le cacul est fait ligne par ligne, probablement très optimisable
         for i in range(len(self.data)):
             vals = V_dict[i]
@@ -220,7 +223,8 @@ class table:
             self.data = self.data.drop(columns=[name, ef.delt(name)])
 
     def giveUnits(self, units):
-        """
+        """\n
+
         This allows you to associate units to your columns
 
         Ex:
@@ -246,7 +250,8 @@ class table:
                     self.units[col] = unit("1")
 
     def changeUnits(self, units):
-        """
+        """\n
+
         Change the units and changing the values of the column accordingly.
         If you want to change te units without changing the values, use the
         .giveUnits method instead.
@@ -261,7 +266,8 @@ class table:
             self.data[ef.delt(col)] *= float(fact)
 
     def renameCols(self, names):
-        """
+        """\n
+
         renames the columns of your dataTable
 
         (names) can either be a string with all the name separeted by spaces,
@@ -280,10 +286,11 @@ class table:
             self.data = self.data.rename(columns=dict(zip(keys, vals)))
 
         if isinstance(names, list):
-                self.data.columns = [n for var in names for n in (var, ef.delt(var))]
+            self.data.columns =\
+                [n for var in names for n in (var, ef.delt(var))]
 
     def squish(self):
-        """Combines data and uncertainty collumns into one. Used with makeGoodTable"""
+        """Combines data and uncertainty collumns. Used with makeGoodTable"""
         out = pd.DataFrame([])
         for col in [str(i) for i in self.data if "Delta" not in str(i)]:
             outCol = []
@@ -310,16 +317,16 @@ class table:
         return(out)
 
     # Export un ficher .tex en faisant toutes les modifications nécessaire
-    def makeGoodTable(self, name):
-        """
+    def makeGoodTable(self, name, style='default'):
+        """\n
+
         Outputs a latex version of itself in directory named tables
 
         (name) name of the exported file.
         """
-        try:
+        if 'tables' not in os.listdir():
             os.mkdir("tables")
-        except:
-            pass
+
         self.fixUnits()
         exp = self.squish()
         names = []
@@ -328,7 +335,8 @@ class table:
                 names.append("${}$".format(col))
             else:
                 names.append("${}$ {{$\rm({})$}}".format(
-                    sp.latex(sp.sympify(ef.preSymp(col))), str(self.units[col])))
+                    sp.latex(sp.sympify(ef.preSymp(col))),
+                    str(self.units[col])))
         exp.columns = names
         latex = exp.to_latex(index=False)\
             .replace("\\textbackslash ", "\\")\
@@ -343,9 +351,17 @@ class table:
             .replace(r'\}', '}')\
             .replace('newton', "N")\
             .replace('$tau', r'$\tau')\
-            .replace("l" * len(exp.columns), "|" + "c|" * len(exp.columns))\
             .replace("pourcent", r"\%")\
             .replace("$omega", r"$\omega")
+        if style == 'default':
+            latex = latex\
+                .replace("l" * len(exp.columns), "|" + "c|" * len(exp.columns))
+        elif style == 'clean':
+            latex = latex\
+                .replace("l" * len(exp.columns), "c" * len(exp.columns))\
+                .replace(r'\hline', '', 1)\
+                .replace(r'\hline', r'\hline\hline', 1)
+            latex = (latex[::-1].replace('enilh\\', '', 1))[::-1]
         with open(r"tables\{}.tex".format(name), "w+") as final:
             final.write(latex)
 
@@ -358,14 +374,9 @@ class table:
             self.data[ef.delt(col)] *= float(const)
             self.units[col] = unit(str(self.units[col].symb / const))
 
-    # def errorbar(self,a,b):
-    #     lol = tuple(self[i] for i in [a,b,delt(b),delt(a)])
-    #     plt.errorbar(*lol,".")
-    #     plt.xlabel("$"+a+"$ "+"("+str(self.units[a])+")")
-    #     plt.ylabel("$"+b+"$ "+"("+str(self.units[b])+")")
-
     def importCol(self, name, dt, index=None):
-        """
+        """\n
+
         imports a column from another table into itself
 
         (name) name of the column to import
@@ -376,11 +387,11 @@ class table:
         """
         if index is None:
             index = (len(self.data) - 1) / 2
-        self.data.insert(index * 2, name, df[name], False)
-        self.data.insert(index * 2 + 1, ef.delt(name), df[ef.delt(name)], False)
+        self.data.insert(index*2, name, dt[name], False)
+        self.data.insert(index*2+1, ef.delt(name), dt[ef.delt(name)], False)
 
     def plot(self, xn, yn, fig_ax=None, **kwargs):
-        if fig_ax == None:
+        if fig_ax is None:
             fig_ax = plt.figure(), plt.gca()
         fig, ax = fig_ax
 
@@ -392,13 +403,16 @@ class table:
         if sum(dt[ef.delt(xn)]) == sum(dt[ef.delt(yn)]) == 0:
             ax.plot(*dt[[xn, yn]].T, ".", **kwargs)
         else:
-            ax.errorbar(*dt[[xn, yn, ef.delt(yn), ef.delt(xn)]].T, ".", **kwargs)
+            ax.errorbar(*dt[[xn, yn, ef.delt(yn), ef.delt(xn)]].T, ".",
+                        **kwargs)
         ax.set_xlabel(ef.ax_name(dt, xn))
         ax.set_ylabel(ef.ax_name(dt, yn))
         # plt.legend()
 
-    def fit(self, func, xn, yn, fig_ax=None, show=True, p0=None, maxfev=1000, **kwargs):
-        """
+    def fit(self, func, xn, yn, fig_ax=None, show=True, p0=None, maxfev=1000,
+            **kwargs):
+        """\n
+
         return optimal parameters of a function fitted on data
 
         Applies a fit on givens colums, interpreted as a 2D graphics
@@ -417,11 +431,11 @@ class table:
 
         (maxfev) Maximum number of itteration to find optimals parameters
         """
-        if fig_ax == None:
+        if fig_ax is None:
             fig_ax = plt.figure(), plt.gca()
         fig, ax = fig_ax
-        popt, pcov = curve_fit(func, *self[[xn, yn]].T, p0=p0, maxfev=maxfev)
-        res = np.array([np.array([popt, np.sqrt(pcov.diagonal())]).T.flatten()])
+        popt, cov = curve_fit(func, *self[[xn, yn]].T, p0=p0, maxfev=maxfev)
+        res = np.array([np.array([popt, np.sqrt(cov.diagonal())]).T.flatten()])
         dt = table('', data=res, AutoInsert=False)
         noms = list(inspect.signature(func).parameters.keys())
         noms = list(map(lambda x: sp.latex(sp.sympify(ef.preSymp(x))), noms))
@@ -442,7 +456,7 @@ class table:
         self.data.insert(pos, name, data)
         self.data.insert(pos + 1, ef.delt(name), incert)
         self.fixUnits()
-    
+
     def copy(self):
         return deepcopy(self)
 
