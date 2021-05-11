@@ -6,6 +6,7 @@ import os
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from . import extra_funcs as ef
+from copy import deepcopy
 
 exval, exUnis = {}, {}
 
@@ -381,10 +382,11 @@ class table:
             fig_ax = plt.figure(), plt.gca()
         fig, ax = fig_ax
 
-        dt = self
+        dt = self.copy()
         if xn not in self.data.columns:
-            dt = table('', data=self.data.copy())
             dt.newCol(xn, xn)
+        if yn not in self.data.columns:
+            dt.newCol(yn, yn)
         ax.errorbar(*dt[[xn, yn, ef.delt(yn), ef.delt(xn)]].T, ".", **kwargs)
         ax.set_xlabel(ef.ax_name(dt, xn))
         ax.set_ylabel(ef.ax_name(dt, yn))
@@ -430,6 +432,9 @@ class table:
         self.data.insert(pos, name, data)
         self.data.insert(pos + 1, ef.delt(name), incert)
         self.fixUnits()
+    
+    def copy(self):
+        return deepcopy(self)
 
 
 def defVal(vals):

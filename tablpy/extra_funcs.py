@@ -11,7 +11,7 @@ def delt(s):
 
 
 def ax_name(tab, qty):
-    s = f"${qty}$"
+    s = f"${sp.latex(sp.sympify(preSymp(qty)))}$"
     if not str(tab.units[qty]) == '1':
         s += r" ( $\rm {:}$ )".format(tab.units[qty])
     return s
