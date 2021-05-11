@@ -17,7 +17,7 @@ def ax_name(tab, qty):
     return s
 
 
-def preSymp(str):
+def preSymp(string):
     """
     returns a string ready to be passed to Sympy.
 
@@ -38,12 +38,12 @@ def preSymp(str):
         >>> sp.sympify(preSymp('N**2'))
         ... N**2
     """
-    str = str.replace("{", "__0__").replace("}", "__1__")
-    pat = (r"\b(?!ln|log|sin|cos|tan|exp|atan|sqrt)\\?"
-           r"[a-zA-Z]+[_0-9a-zA-Z({{)(}}),]*\b")
-    a = [f"Symbol('{i}')" for i in re.findall(pat, str)]
-    return re.sub(pat, r"{}", str).format(*a).replace("__0__", "{")\
-                                             .replace("__1__", "}")
+    string = string.replace("{", "__0__").replace("}", "__1__")
+    pat = (r"(?!ln|log|sin|cos|tan|exp|atan|sqrt)"
+           r"\\?[a-zA-Z]+[_0-9a-zA-Z({{)(}}),]*")
+    a = [f"Symbol('{i}')" for i in re.findall(pat, string)]
+    return re.sub(pat, r"{}", string).format(*a).replace("__0__", "{")\
+                                                .replace("__1__", "}")
 
 
 def roundUp(num):  # arrondis vers le haut à la bonne décimale

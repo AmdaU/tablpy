@@ -380,12 +380,17 @@ class table:
         if fig_ax == None:
             fig_ax = plt.figure(), plt.gca()
         fig, ax = fig_ax
-        ax.errorbar(*self[[xn, yn, ef.delt(yn), ef.delt(xn)]].T, ".", **kwargs)
-        ax.set_xlabel(ef.ax_name(self, xn))
-        ax.set_ylabel(ef.ax_name(self, yn))
+
+        dt = self
+        if xn not in self.data.columns:
+            dt = table('', data=self.data.copy())
+            dt.newCol(xn, xn)
+        ax.errorbar(*dt[[xn, yn, ef.delt(yn), ef.delt(xn)]].T, ".", **kwargs)
+        ax.set_xlabel(ef.ax_name(dt, xn))
+        ax.set_ylabel(ef.ax_name(dt, yn))
         # plt.legend()
 
-    def fit(self, func, xn, yn, fig_ax=None, show=True, maxfev=1000, **kargs):
+    def fit(self, func, xn, yn, fig_ax=None, show=True, p0=None, maxfev=1000, **kwargs):
         """
         return optimal parameters of a function fitted on data
 
@@ -406,13 +411,12 @@ class table:
         if fig_ax == None:
             fig_ax = plt.figure(), plt.gca()
         fig, ax = fig_ax
-        x0 = kargs["x0"] if "x0" in kargs else None
-        popt, pcov = curve_fit(func, *self[[xn, yn]].T, x0, maxfev=maxfev)
+        popt, pcov = curve_fit(func, *self[[xn, yn]].T, p0=p0, maxfev=maxfev)
         results = np.array([np.array([popt, np.sqrt(pcov.diagonal())]).T.flatten()])
         dt = table('', data=results, AutoInsert=False)
         if show:
             x = np.linspace(*ef.extrem(self[xn]), 1000)
-            self.plot(xn, yn, label="Données", fig_ax=fig_ax)
+            self.plot(xn, yn, label="Données", fig_ax=fig_ax, **kwargs)
             ax.plot(x, func(x, *popt), label="fit")
             ax.legend()
         return dt
