@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from . import extra_funcs as ef
 from copy import deepcopy
+import inspect
 
 exval, exUnis = {}, {}
 
@@ -326,7 +327,8 @@ class table:
             if str(self.units[col].SIval) in ["1", '1.00000000000000']:
                 names.append("${}$".format(col))
             else:
-                names.append("${}$ ({})".format(col, self.units[col].symb))
+                names.append("${}$ {{$\rm({})$}}".format(
+                    sp.latex(sp.sympify(ef.preSymp(col))), str(self.units[col])))
         exp.columns = names
         latex = exp.to_latex(index=False)\
             .replace("\\textbackslash ", "\\")\
@@ -344,7 +346,7 @@ class table:
             .replace("l" * len(exp.columns), "|" + "c|" * len(exp.columns))\
             .replace("pourcent", r"\%")\
             .replace("$omega", r"$\omega")
-        with open(r"tableaux\{}.tex".format(name), "w+") as final:
+        with open(r"tables\{}.tex".format(name), "w+") as final:
             final.write(latex)
 
     def fixUnits(self):
@@ -387,7 +389,10 @@ class table:
             dt.newCol(xn, xn)
         if yn not in self.data.columns:
             dt.newCol(yn, yn)
-        ax.errorbar(*dt[[xn, yn, ef.delt(yn), ef.delt(xn)]].T, ".", **kwargs)
+        if sum(dt[ef.delt(xn)]) == sum(dt[ef.delt(yn)]) == 0:
+            ax.plot(*dt[[xn, yn]].T, ".", **kwargs)
+        else:
+            ax.errorbar(*dt[[xn, yn, ef.delt(yn), ef.delt(xn)]].T, ".", **kwargs)
         ax.set_xlabel(ef.ax_name(dt, xn))
         ax.set_ylabel(ef.ax_name(dt, yn))
         # plt.legend()
@@ -408,14 +413,19 @@ class table:
 
         (show) If True, shows the data and the fit
 
+        (p0) Initial parameters
+
         (maxfev) Maximum number of itteration to find optimals parameters
         """
         if fig_ax == None:
             fig_ax = plt.figure(), plt.gca()
         fig, ax = fig_ax
         popt, pcov = curve_fit(func, *self[[xn, yn]].T, p0=p0, maxfev=maxfev)
-        results = np.array([np.array([popt, np.sqrt(pcov.diagonal())]).T.flatten()])
-        dt = table('', data=results, AutoInsert=False)
+        res = np.array([np.array([popt, np.sqrt(pcov.diagonal())]).T.flatten()])
+        dt = table('', data=res, AutoInsert=False)
+        noms = list(inspect.signature(func).parameters.keys())
+        noms = list(map(lambda x: sp.latex(sp.sympify(ef.preSymp(x))), noms))
+        dt.renameCols(noms[1:])
         if show:
             x = np.linspace(*ef.extrem(self[xn]), 1000)
             self.plot(xn, yn, label="Données", fig_ax=fig_ax, **kwargs)

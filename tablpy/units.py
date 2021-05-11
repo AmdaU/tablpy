@@ -19,8 +19,9 @@ SIBT = dict(zip(SIB, sp.sympify(defs)))
 class unit:
     def __init__(self, s):
         self.str = s
-        s = s.replace("N", "newton").replace(
-            "Ω", "ohms").replace(r"\Omega", "ohms").replace("%", "percent")
+        s = s.replace("N", "newton").replace("Ω", "ohms")\
+             .replace(r"\Omega", "ohms").replace("%", "percent")\
+             .replace('°', 'deg').replace('^\circ', 'deg')
         self.symb = sp.sympify(ef.preSymp(s))
         self.SIval = self.symb
         self.prefix = None
@@ -75,7 +76,9 @@ class unit:
             return unit(str(1 / self.symb))
 
     def __str__(self):
-        return sp.latex(self.symb)
+        return sp.latex(self.symb).replace("newton", 'N')\
+             .replace("ohms", r"\Omega").replace("percent", "%")\
+             .replace('deg', '^\circ')
 
     def __repr__(self):
         return str(self.symb)
