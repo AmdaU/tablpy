@@ -40,9 +40,10 @@ def preSymp(string):
         >>> sp.sympify(preSymp('N**2'))
         ... N**2
     """
-    string = string.replace("{", "__0__").replace("}", "__1__")
-    pat = (r"(?!ln|log|sin|cos|tan|exp|atan|sqrt)"
-           r"\\?[a-zA-Z]+[_0-9a-zA-Z({{)(}}),]*")
+    string = string.replace("{", "__0__").replace("}", "__1__")\
+                   .replace('np.', '')
+    pat = (r"\\?\b(?!ln|log|sin|cos|tan|exp|atan|sqrt)"
+           r"[a-zA-Z]+[_0-9a-zA-Z({{)(}}),]*\b")
     a = [f"Symbol('{i}')" for i in re.findall(pat, string)]
     return re.sub(pat, r"{}", string).format(*a).replace("__0__", "{")\
                                                 .replace("__1__", "}")

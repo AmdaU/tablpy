@@ -282,7 +282,6 @@ class table:
                     for n in (var, ef.delt(var))]
             vals = [n for var in names.values()
                     for n in (var, ef.delt(var))]
-            print(dict(zip(keys, vals)))
             self.data = self.data.rename(columns=dict(zip(keys, vals)))
 
         if isinstance(names, list):
@@ -410,7 +409,7 @@ class table:
         # plt.legend()
 
     def fit(self, func, xn, yn, fig_ax=None, show=True, p0=None, maxfev=1000,
-            **kwargs):
+            fit_label='fit',**kwargs):
         """\n
 
         return optimal parameters of a function fitted on data
@@ -440,10 +439,14 @@ class table:
         noms = list(inspect.signature(func).parameters.keys())
         noms = list(map(lambda x: sp.latex(sp.sympify(ef.preSymp(x))), noms))
         dt.renameCols(noms[1:])
+        lines = inspect.getsourcelines(func)
+        if len(lines) == 2 and fit_label == 'fit':
+            expr = sp.sympify(ef.preSymp(lines[0][-1].replace('return ', '')))
+            fit_label = "$"+sp.latex(expr)+"$"
         if show:
             x = np.linspace(*ef.extrem(self[xn]), 1000)
-            self.plot(xn, yn, label="Données", fig_ax=fig_ax, **kwargs)
-            ax.plot(x, func(x, *popt), label="fit")
+            self.plot(xn, yn, fig_ax=fig_ax, **kwargs)
+            ax.plot(x, func(x, *popt), label=fit_label)
             ax.legend()
         return dt
 

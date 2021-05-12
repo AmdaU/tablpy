@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tablpy"
-version = "0.6.1"
+version = "0.6.2"
 description = "A package that makes importing and handeling data"
 authors = ["AmdaUwU <jbat2000@gmail.com>"]
 license = "MIT"
