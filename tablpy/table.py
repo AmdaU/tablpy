@@ -440,6 +440,8 @@ class table:
         noms = list(map(lambda x: sp.latex(sp.sympify(ef.preSymp(x))), noms))
         dt.renameCols(noms[1:])
         lines = inspect.getsourcelines(func)
+
+        
         if len(lines) == 2 and fit_label == 'fit':
             expr = sp.sympify(ef.preSymp(lines[0][-1].replace('return ', '')))
             fit_label = "$"+sp.latex(expr)+"$"

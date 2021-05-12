@@ -125,3 +125,8 @@ def rejectOutliers(data, n=2):
 
 def roll(values, min, max):
     return ((values-min) % (max-min))+min
+
+
+def lock_axes(ax):
+    ax.set_xlim(ax.get_xlim())
+    ax.set_ylim(ax.get_ylim())
