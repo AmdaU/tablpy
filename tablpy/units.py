@@ -6,13 +6,6 @@ prefixs = {"y": 1e-24, "z": 1e-21, "a": 1e-18, "f": 1e-15, "p": 1e-12,
            "d": 1e-1, "": 1, "h": 1e2, "k": 1e3, "M": 1e6, "G": 1e9, "T": 1e12,
            "P": 1e15, "B": 1e15, "E": 1e18, "Z": 1e21, "Y": 1e24}
 SI = sp.symbols("g s m K A mol cd")
-# SIB = sp.symbols(r"Hz newton Pa J W C V F ohms S H \AA Wb T lm lx Bq Gy"
-#                  r"Sv kat percent")
-# defs = ["1/s", "1000*g*(m/s**2)", "1000*g/m/s**2", "1000*g*m**2/s**2",
-#         "1000*g*m**2/s**3", "s*A", "1000*g*m**2/s**3/A",
-#         "A**2*s**4/(1000*g)/m**2", "1000*g*m**2/s**3/A**2",
-#         "A**2/(1000*g)/m**2*s**3", "m**2*(1000*g)/s**2/A**2",
-#         "0.000000001*m"]
 
 SIBT = {'Hz':     '1/s',
         'newton': '1000*g*(m/s**2)',
@@ -31,7 +24,12 @@ SIBT = {'Hz':     '1/s',
         'lm':     'cd',
         'lx':     'cd/m**2',
         'Bq':     '1/s',
-        'Gy':     'm**2/s**2'
+        'Gy':     'm**2/s**2',
+        'G':      '0.1*g/(A*s**2)',
+        'lb':     '453.59237*g',
+        'oz':     '28.3495231*g',
+        'L':      'm**3',
+        'percent':'0.01'
        }
 SIBT = dict(zip(sp.symbols(list(SIBT.keys())), SIBT.values()))
 # SIBT = dict(zip(SIB, sp.sympify(defs)))
@@ -110,8 +108,7 @@ class unit:
     def to(self, nunit):
         """\n
 
-        Convertis des unités en d'autres unités
-            Agit sur l'objet lui-même et retourne le facteur de converstion
+        Convertes units to others and outputs de ratio
 
             ex:
             >>> a = unit("m/s**2")
@@ -131,8 +128,8 @@ class unit:
             self.str = nunit.str
             self.symb = nunit.symb
         else:
-            print(f"La converstion d'unité à échoué car les {self.str} et les"
-                  f"{nunit.str} sont incompatibles")
+            print(f"Conversion failed due to {self.str} and "
+                  f"{nunit.str} being incompatible")
             factor = 1
         return 1 / factor
 

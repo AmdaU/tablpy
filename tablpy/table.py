@@ -1,3 +1,5 @@
+# %%
+
 from . import extra_funcs as ef
 from .units import unit
 from copy import deepcopy
@@ -409,7 +411,7 @@ class table:
         # plt.legend()
 
     def fit(self, func, xn, yn, fig_ax=None, show=True, p0=None, maxfev=1000,
-            fit_label='fit',**kwargs):
+            fit_label='fit', fit_color=None,**kwargs):
         """\n
 
         return optimal parameters of a function fitted on data
@@ -441,14 +443,14 @@ class table:
         dt.renameCols(noms[1:])
         lines = inspect.getsourcelines(func)
 
-        
+
         if len(lines) == 2 and fit_label == 'fit':
             expr = sp.sympify(ef.preSymp(lines[0][-1].replace('return ', '')))
             fit_label = "$"+sp.latex(expr)+"$"
         if show:
             x = np.linspace(*ef.extrem(self[xn]), 1000)
+            ax.plot(x, func(x, *popt), label=fit_label, color=fit_color)
             self.plot(xn, yn, fig_ax=fig_ax, **kwargs)
-            ax.plot(x, func(x, *popt), label=fit_label)
             ax.legend()
         return dt
 
@@ -464,6 +466,36 @@ class table:
 
     def copy(self):
         return deepcopy(self)
+    
+    def getStr(self, cols):
+        """Combines data and uncertainty collumns. Used with makeGoodTable"""
+        cols = list(cols)
+        out = dict()
+        for col in [str(i) for i in cols]:
+            outCol = []
+            # prendre toutes les valeurs + leurs delta individuellement
+            for x in range(len(self.data[col])):
+                # calculer le nombre de nombre de chiffres significatif requis
+                val = self.data[col][x]
+                d = self.data[ef.delt(col)][x]
+                # formater la colonne en fonction des résultats
+                if d == 0:
+                    s = str(val)
+                    while s.endswith('0') or s.endswith('.'):
+                        s = s[:-1]
+                    outCol.append("$" + s + "$")
+                else:
+                    outCol.append(
+                        "$" + ef.precisionStr(val, d)  + " \\pm " + "{:.1g}$"
+                        .format(ef.roundUp(self.data[ef.delt(col)][x]))
+                        )
+            out[col] = outCol
+        if len(list(out.values())[0]) == 1:
+            out = {key: out[key][0] for key in list(out.keys())}
+        if len(cols) == 1:
+            out = out[col[0]]
+        return(out)
+
 
 
 def defVal(vals):
@@ -473,4 +505,3 @@ def defVal(vals):
         exval[ef.delt(i)] = float(a[1])
         exUnis[i] = unit(a[2])
 
-# %%

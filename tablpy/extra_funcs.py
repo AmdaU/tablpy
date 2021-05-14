@@ -130,3 +130,34 @@ def roll(values, min, max):
 def lock_axes(ax):
     ax.set_xlim(ax.get_xlim())
     ax.set_ylim(ax.get_ylim())
+
+def precisionStr(x, delt):
+    """
+    returns a string representing a number with specified amount of significant values
+
+    (x) the number you want to be represented correctly
+
+    """
+    sig = ''
+    if np.sign(x) == -1:
+        sig = '-'
+        x = abs(x)
+    if x == 0:
+        n = -int(np.floor(np.log10(delt)))+1
+        o = 0
+    else:
+        n = int(np.floor(np.log10(x)))-int(np.floor(np.log10(delt)))+1
+        o = int(np.log10(x))
+
+    s = str(x*10**-o).replace('.', '')[:n+1]
+    l = len(s)
+    s += '0'*(n-l)
+    s += '0'*-(l-o-1)
+    s = '0'*-o + s
+    if o > 0:
+        s = s[:o+1] + '.' + s[o+1:]
+    else:
+        s = s[0] + '.' + s[1:]
+    if s[-1] == '.':
+        s = s[:-1]
+    return sig+s
