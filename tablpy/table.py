@@ -1,7 +1,9 @@
 # %%
 
 from . import extra_funcs as ef
+#import extra_funcs as ef
 from .units import unit
+#from units import unit
 from copy import deepcopy
 import inspect
 import matplotlib.pyplot as plt
@@ -64,6 +66,7 @@ class table:
     (data) if you do not want to import from a data file, you can pass a
         np.array to this argument. The datname you specified will be ignored.
     """
+
     def __init__(self, datname, AutoInsert=True, units={}, sheet=None,
                  data=None, delimiter=',', skiprows=None, noNames=False):
         self.units = units
@@ -104,24 +107,30 @@ class table:
                                             skiprows=skiprows, header=0,
                                             names=names)
 
-        self.giveUnits(units)
         self.formulas = {}
 
         if AutoInsert:
             lol = True
+            if not ef.isUncertain(*self.data.columns[0:2]):
+                self.data.insert(1, ef.delt(
+                    self.data.columns[0]), [0 for i in range(len(self.data))])
+
             while lol:
                 lol = False
-                for i in range(len(self.data.columns) - 1):
-                    if not ef.isUncertain(self.data.columns[i]) and\
-                       not ef.isUncertain(self.data.columns[i + 1]):
+                for i in range(1, len(self.data.columns) - 1):
+                    if not ef.isUncertain(*self.data.columns[i:i+2]) and\
+                       not ef.isUncertain(*self.data.columns[i-1:i+1]):
                         self.data.insert(i + 1, ef.delt(self.data.columns[i]),
                                          [0 for i in range(len(self.data))])
                         lol = True
 
-            if not ef.isUncertain(self.data.columns[-1]):
+            if not ef.isUncertain(*self.data.columns[-2:]):
                 self.data.insert(len(self.data.columns), ef.delt(
                     self.data.columns[-1]), [0 for i in range(len(self.data))])
         self.data.columns = list(map(str, self.data.columns))
+        for i in self.data.columns:
+            self.units[i] = unit('1')
+        self.giveUnits(units)
 
     def __repr__(self):
         dat = [c for c in list(self.data) if 'Delta' not in c]
@@ -191,7 +200,7 @@ class table:
             pre_dict_i = dict(zip(
                 [f"dummy{x}" for x in range(len(expr_incert.free_symbols))],
                 map(str, expr_incert.free_symbols)
-                ))
+            ))
             expr_incert = expr_incert.subs(
                 {v: k for k, v in pre_dict_i.items()})
             lamb_incert = sp.lambdify(tuple(expr_incert.free_symbols),
@@ -204,7 +213,7 @@ class table:
             delt_vals = {name: vals[pre_dict_i[name]] for name in pre_dict_i}
             out[i] = [
                 lamb(**nvals), 0 if NoIncert else lamb_incert(**delt_vals)]
-        # Nomme les colonnes et les ajoute au tableau
+        # nameme les colonnes et les ajoute au tableau
         if units:
             self.units[name] = unit(units)
         else:
@@ -212,7 +221,7 @@ class table:
                 self.units[str(i)]
                 if str(i) in self.units
                 else exUnis[str(i)]for i in self.formulas[name].free_symbols)
-                )
+            )
         self.data.insert(pos, name, out[:, 0])
         self.data.insert(pos + 1, ef.delt(name), out[:, 1])
         self.fixUnits()
@@ -277,9 +286,15 @@ class table:
         """
         # vars = list(sp.symbols(noms))
         if isinstance(names, str):
-            self.data.columns = [n for var in names.split(" ")
+            names = names.split(" ")
+            for i in range(len(names)):
+                self.units[names[i]] = self.units[self.data.columns[::2][i]]
+            self.data.columns = [n for var in names
                                  for n in (var, ef.delt(var))]
+
         if isinstance(names, dict):
+            for key in list(names.keys()):
+                self.units[names[key]] = self.units[key]
             keys = [n for var in names.keys()
                     for n in (var, ef.delt(var))]
             vals = [n for var in names.values()
@@ -287,6 +302,8 @@ class table:
             self.data = self.data.rename(columns=dict(zip(keys, vals)))
 
         if isinstance(names, list):
+            for i in range(len(names)):
+                self.units[names[i]] = self.units[self.data.columns[::2][i]]
             self.data.columns =\
                 [n for var in names for n in (var, ef.delt(var))]
 
@@ -308,12 +325,12 @@ class table:
                     outCol.append("$" + s + "$")
                 else:
                     miam = "{{:.{}g}}"\
-                          .format(- np.ceil(-sp.log(abs(val), 10))
-                                  + np.ceil(-sp.log(d, 10)) + 1).format(val)
+                        .format(- np.ceil(-sp.log(abs(val), 10))
+                                + np.ceil(-sp.log(d, 10)) + 1).format(val)
                     outCol.append(
                         "$" + miam + " \\pm " + "{:.1g}$"
                         .format(ef.roundUp(self.data[ef.delt(col)][x]))
-                        )
+                    )
             out["$" + col + "$"] = outCol
         return(out)
 
@@ -391,7 +408,8 @@ class table:
         self.data.insert(index*2, name, dt[name], False)
         self.data.insert(index*2+1, ef.delt(name), dt[ef.delt(name)], False)
 
-    def plot(self, xn, yn, fig_ax=None, **kwargs):
+    def plot(self, xn, yn, fig_ax=None, polar=False, NoErrorBar=False,
+             **kwargs):
         if fig_ax is None:
             fig_ax = plt.figure(), plt.gca()
         fig, ax = fig_ax
@@ -401,17 +419,16 @@ class table:
             dt.newCol(xn, xn)
         if yn not in self.data.columns:
             dt.newCol(yn, yn)
-        if sum(dt[ef.delt(xn)]) == sum(dt[ef.delt(yn)]) == 0:
+        if sum(dt[ef.delt(xn)]) == sum(dt[ef.delt(yn)]) == 0 or NoErrorBar:
             ax.plot(*dt[[xn, yn]].T, ".", **kwargs)
         else:
             ax.errorbar(*dt[[xn, yn, ef.delt(yn), ef.delt(xn)]].T, ".",
                         **kwargs)
         ax.set_xlabel(ef.ax_name(dt, xn))
         ax.set_ylabel(ef.ax_name(dt, yn))
-        # plt.legend()
 
     def fit(self, func, xn, yn, fig_ax=None, show=True, p0=None, maxfev=1000,
-            fit_label='fit', fit_color=None,**kwargs):
+            fit_label='fit', fit_color=None, **kwargs):
         """\n
 
         return optimal parameters of a function fitted on data
@@ -435,24 +452,28 @@ class table:
         if fig_ax is None:
             fig_ax = plt.figure(), plt.gca()
         fig, ax = fig_ax
-        popt, cov = curve_fit(func, *self[[xn, yn]].T, p0=p0, maxfev=maxfev)
+        dt = self.copy()
+        if xn not in self.data.columns:
+            dt.newCol(xn, xn)
+        if yn not in self.data.columns:
+            dt.newCol(yn, yn)
+        popt, cov = curve_fit(func, *dt[[xn, yn]].T, p0=p0, maxfev=maxfev)
         res = np.array([np.array([popt, np.sqrt(cov.diagonal())]).T.flatten()])
-        dt = table('', data=res, AutoInsert=False)
+        out = table('', data=res, AutoInsert=False)
         noms = list(inspect.signature(func).parameters.keys())
         noms = list(map(lambda x: sp.latex(sp.sympify(ef.preSymp(x))), noms))
-        dt.renameCols(noms[1:])
+        out.renameCols(noms[1:])
         lines = inspect.getsourcelines(func)
-
 
         if len(lines) == 2 and fit_label == 'fit':
             expr = sp.sympify(ef.preSymp(lines[0][-1].replace('return ', '')))
             fit_label = "$"+sp.latex(expr)+"$"
         if show:
-            x = np.linspace(*ef.extrem(self[xn]), 1000)
+            x = np.linspace(*ef.extrem(dt[xn]), 1000)
             ax.plot(x, func(x, *popt), label=fit_label, color=fit_color)
-            self.plot(xn, yn, fig_ax=fig_ax, **kwargs)
+            dt.plot(xn, yn, fig_ax=fig_ax, **kwargs)
             ax.legend()
-        return dt
+        return out
 
     def append(self, name, data, incert=None, pos=None, units="1"):
         if pos is None:
@@ -466,7 +487,7 @@ class table:
 
     def copy(self):
         return deepcopy(self)
-    
+
     def getStr(self, cols):
         """Combines data and uncertainty collumns. Used with makeGoodTable"""
         cols = list(cols)
@@ -486,9 +507,9 @@ class table:
                     outCol.append("$" + s + "$")
                 else:
                     outCol.append(
-                        "$" + ef.precisionStr(val, d)  + " \\pm " + "{:.1g}$"
+                        "$" + ef.precisionStr(val, d) + " \\pm " + "{:.1g}$"
                         .format(ef.roundUp(self.data[ef.delt(col)][x]))
-                        )
+                    )
             out[col] = outCol
         if len(list(out.values())[0]) == 1:
             out = {key: out[key][0] for key in list(out.keys())}
@@ -497,11 +518,62 @@ class table:
         return(out)
 
 
-
 def defVal(vals):
     for i in vals:
-        a = vals[i].split(" ")
+        if isinstance(i, str):
+            a = vals[i].split(" ")
+        else:
+            a = vals[i]
         exval[i] = float(a[0])
         exval[ef.delt(i)] = float(a[1])
         exUnis[i] = unit(a[2])
 
+
+def genVal(name, formula, units=None, NoUncert=False):
+    expression = sp.sympify(ef.preSymp(formula))
+    expression_orig = deepcopy(expression)
+    pre_dict = dict(zip([f"dummy{x}" for x in range(
+        len(expression.free_symbols))], map(str, expression.free_symbols)))
+    expression = expression.subs({v: k for k, v in pre_dict.items()})
+    lamb = sp.lambdify(tuple(expression.free_symbols), expression)
+    if not NoUncert:
+        expr_incert = ef.formule_incertitude(formula)
+        pre_dict_i = dict(zip(
+            [f"dummy{x}" for x in range(len(expr_incert.free_symbols))],
+            map(str, expr_incert.free_symbols)
+        ))
+        expr_incert = expr_incert.subs(
+            {v: k for k, v in pre_dict_i.items()})
+        lamb_incert = sp.lambdify(tuple(expr_incert.free_symbols),
+                                      expr_incert)
+    # Le cacul est fait ligne par ligne, probablement très optimisable
+    vals = exval
+    nvals = {name: vals[pre_dict[name]] for name in pre_dict}
+    delt_vals = {name: vals[pre_dict_i[name]] for name in pre_dict_i}
+    exval[name], exval[ef.delt(name)] =\
+        [lamb(**nvals), 0 if NoUncert else lamb_incert(**delt_vals)]
+
+    if units:
+            exUnis[name] = unit(units)
+    else:
+        exUnis[name] = lamb(*(
+            exUnis[str(i)] for i in expression_orig.free_symbols))
+
+
+def getVal(name):
+    return exval[name], exval[ef.delt(name)], exUnis[name]
+
+
+def getStrVal(name, latex=True):
+    val = getVal(name)
+    if latex:
+        s =  f"${ef.valueStr(*val[0:2])}$"
+        if not str(val[2]) == '1':
+            s += r" ( $\rm {:}$ )".format(exUnis[name])
+        return s
+    else:
+        s = f"{ef.valueStr(*val[0,1])}"
+        if not str(val[2]) == '1':
+            s += r" ( {:} )".format(tab.units[qty])
+        return s
+# %%

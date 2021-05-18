@@ -1,1 +1,1 @@
-from .table import table, defVal
+from .table import table, defVal, getStrVal, getVal, genVal

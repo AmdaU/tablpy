@@ -1,3 +1,4 @@
+# %%
 import math
 import matplotlib.pyplot as plt
 import numpy as np
@@ -101,12 +102,18 @@ def extrem(x):
     return float(min(x)), float(max(x))
 
 
-def isUncertain(string):
+def isUncertain(prev, string):
+    string = str(string)
+    prev = str(prev)
+    string = string.replace(prev, '')
+    string = string.replace(' ', '').replace('\\', '').replace('!', '')
     marqeurs = ['delta',
                 'Delta',
                 'Δ',
-                'Î”']
-    return any([marqeur in str(string) for marqeur in marqeurs])
+                'Î”',
+                'd'
+                ]
+    return any([marqeur == string for marqeur in marqeurs])
 
 
 def getTexIncert(eq):
@@ -131,9 +138,9 @@ def lock_axes(ax):
     ax.set_xlim(ax.get_xlim())
     ax.set_ylim(ax.get_ylim())
 
+
 def precisionStr(x, delt):
-    """
-    returns a string representing a number with specified amount of significant values
+    """\n
 
     (x) the number you want to be represented correctly
 
@@ -143,15 +150,15 @@ def precisionStr(x, delt):
         sig = '-'
         x = abs(x)
     if x == 0:
-        n = -int(np.floor(np.log10(delt)))+1
+        n = -int(np.floor(np.log10(delt)))
         o = 0
     else:
-        n = int(np.floor(np.log10(x)))-int(np.floor(np.log10(delt)))+1
-        o = int(np.log10(x))
-
+        n = int(np.floor(np.log10(x)))-int(np.floor(np.log10(delt)))
+        o = int(np.floor(np.log10(x)))
+    x = round(x, (n-o))
     s = str(x*10**-o).replace('.', '')[:n+1]
     l = len(s)
-    s += '0'*(n-l)
+    s += '0'*(n-l+1)
     s += '0'*-(l-o-1)
     s = '0'*-o + s
     if o > 0:
@@ -161,3 +168,12 @@ def precisionStr(x, delt):
     if s[-1] == '.':
         s = s[:-1]
     return sig+s
+    
+
+def valueStr(val, uncertain):
+    return precisionStr(val, uncertain) + ' \pm  ' + precisionStr(uncertain, uncertain)
+
+# %%
+
+#valueStr(12.23456, 0.000300)
+# %%
