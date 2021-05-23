@@ -7,13 +7,14 @@ from .units import unit
 from copy import deepcopy
 import inspect
 import matplotlib.pyplot as plt
+from matplotlib.offsetbox import AnchoredText
 import numpy as np
 import os
 import pandas as pd
 from scipy.optimize import curve_fit
 import sympy as sp
 
-exval, exUnis = {}, {}
+exVals, exUnis = {}, {}
 
 showUncertain = True
 
@@ -68,8 +69,9 @@ class table:
     """
 
     def __init__(self, datname, AutoInsert=True, units={}, sheet=None,
-                 data=None, delimiter=',', skiprows=None, noNames=False):
-        self.units = units
+                 data=None, delimiter=',', skiprows=None, noNames=False,
+                 comment='#'):
+        self.units = deepcopy(units)
         if data is not None:
             if isinstance(data, pd.DataFrame):
                 self.data = data
@@ -99,13 +101,13 @@ class table:
                 self.data = pd.read_excel(name + '.' + ext, sheet_name=sheet)
             else:
                 self.data = pd.read_csv(name + '.' + ext, delimiter=delimiter,
-                                        skiprows=skiprows)
+                                        skiprows=skiprows, comment=comment)
                 if noNames:
                     names = list(map(str, range(len(self.data.columns))))
                     self.data = pd.read_csv(name + '.' + ext,
                                             delimiter=delimiter,
                                             skiprows=skiprows, header=0,
-                                            names=names)
+                                            names=names, comment=comment)
 
         self.formulas = {}
 
@@ -208,7 +210,7 @@ class table:
         # Le cacul est fait ligne par ligne, probablement très optimisable
         for i in range(len(self.data)):
             vals = V_dict[i]
-            vals.update(exval)
+            vals.update(exVals)
             nvals = {name: vals[pre_dict[name]] for name in pre_dict}
             delt_vals = {name: vals[pre_dict_i[name]] for name in pre_dict_i}
             out[i] = [
@@ -220,7 +222,7 @@ class table:
             self.units[name] = lamb(*(
                 self.units[str(i)]
                 if str(i) in self.units
-                else exUnis[str(i)]for i in self.formulas[name].free_symbols)
+                else deepcopy(exUnis[str(i)]) for i in self.formulas[name].free_symbols)
             )
         self.data.insert(pos, name, out[:, 0])
         self.data.insert(pos + 1, ef.delt(name), out[:, 1])
@@ -253,10 +255,10 @@ class table:
             try:
                 if isinstance(units[col], str):
                     units[col] = unit(units[col])
-                self.units[col] = units[col]
+                self.units[col] = deepcopy(units[col])
             except:
                 try:
-                    self.units[col] = self.units[col]
+                    self.units[col] = deepcopy(self.units[col])
                 except:
                     self.units[col] = unit("1")
 
@@ -288,13 +290,13 @@ class table:
         if isinstance(names, str):
             names = names.split(" ")
             for i in range(len(names)):
-                self.units[names[i]] = self.units[self.data.columns[::2][i]]
+                self.units[names[i]] = deepcopy(self.units[self.data.columns[::2][i]])
             self.data.columns = [n for var in names
                                  for n in (var, ef.delt(var))]
 
         if isinstance(names, dict):
             for key in list(names.keys()):
-                self.units[names[key]] = self.units[key]
+                self.units[names[key]] = deepcopy(self.units[key])
             keys = [n for var in names.keys()
                     for n in (var, ef.delt(var))]
             vals = [n for var in names.values()
@@ -303,7 +305,7 @@ class table:
 
         if isinstance(names, list):
             for i in range(len(names)):
-                self.units[names[i]] = self.units[self.data.columns[::2][i]]
+                self.units[names[i]] = deepcopy(self.units[self.data.columns[::2][i]])
             self.data.columns =\
                 [n for var in names for n in (var, ef.delt(var))]
 
@@ -460,14 +462,21 @@ class table:
         popt, cov = curve_fit(func, *dt[[xn, yn]].T, p0=p0, maxfev=maxfev)
         res = np.array([np.array([popt, np.sqrt(cov.diagonal())]).T.flatten()])
         out = table('', data=res, AutoInsert=False)
-        noms = list(inspect.signature(func).parameters.keys())
-        noms = list(map(lambda x: sp.latex(sp.sympify(ef.preSymp(x))), noms))
-        out.renameCols(noms[1:])
+        names = list(inspect.signature(func).parameters.keys())
+        names = list(map(lambda x: sp.latex(sp.sympify(ef.preSymp(x))), names))
+        out.renameCols(names[1:])
         lines = inspect.getsourcelines(func)
 
-        if len(lines) == 2 and fit_label == 'fit':
+        if len(lines) == 2:
             expr = sp.sympify(ef.preSymp(lines[0][-1].replace('return ', '')))
-            fit_label = "$"+sp.latex(expr)+"$"
+            if fit_label == 'fit':
+                fit_label = "$"+sp.latex(expr)+"$"
+            values = {name: ef.precisionStr(out[name][0], out[ef.delt(name)][0])
+                            for name in names[1:]}
+            eq = sp.latex(expr)
+            for name, val in values.items():
+                eq = eq.replace(str(name), val)
+            ax.add_artist(AnchoredText('$'+ef.latexify(yn)+'='+eq+'$', loc=2))
         if show:
             x = np.linspace(*ef.extrem(dt[xn]), 1000)
             ax.plot(x, func(x, *popt), label=fit_label, color=fit_color)
@@ -524,8 +533,8 @@ def defVal(vals):
             a = vals[i].split(" ")
         else:
             a = vals[i]
-        exval[i] = float(a[0])
-        exval[ef.delt(i)] = float(a[1])
+        exVals[i] = float(a[0])
+        exVals[ef.delt(i)] = float(a[1])
         exUnis[i] = unit(a[2])
 
 
@@ -537,7 +546,7 @@ def genVal(name, formula, units=None, NoUncert=False):
     expression = expression.subs({v: k for k, v in pre_dict.items()})
     lamb = sp.lambdify(tuple(expression.free_symbols), expression)
     if not NoUncert:
-        expr_incert = ef.formule_incertitude(formula)
+        expr_incert = ef.formule_incertitude(ef.preSymp(formula))
         pre_dict_i = dict(zip(
             [f"dummy{x}" for x in range(len(expr_incert.free_symbols))],
             map(str, expr_incert.free_symbols)
@@ -547,10 +556,10 @@ def genVal(name, formula, units=None, NoUncert=False):
         lamb_incert = sp.lambdify(tuple(expr_incert.free_symbols),
                                       expr_incert)
     # Le cacul est fait ligne par ligne, probablement très optimisable
-    vals = exval
+    vals = exVals
     nvals = {name: vals[pre_dict[name]] for name in pre_dict}
     delt_vals = {name: vals[pre_dict_i[name]] for name in pre_dict_i}
-    exval[name], exval[ef.delt(name)] =\
+    exVals[name], exVals[ef.delt(name)] =\
         [lamb(**nvals), 0 if NoUncert else lamb_incert(**delt_vals)]
 
     if units:
@@ -561,19 +570,24 @@ def genVal(name, formula, units=None, NoUncert=False):
 
 
 def getVal(name):
-    return exval[name], exval[ef.delt(name)], exUnis[name]
+    return exVals[name], exVals[ef.delt(name)], exUnis[name]
 
 
-def getStrVal(name, latex=True):
+def getStrVal(name, latex=True, sci=False):
     val = getVal(name)
     if latex:
-        s =  f"${ef.valueStr(*val[0:2])}$"
+        s =  f"${ef.valueStr(*val[0:2], sci=sci)}$"
         if not str(val[2]) == '1':
-            s += r" ( $\rm {:}$ )".format(exUnis[name])
+            s += r" $\rm {:}$".format(exUnis[name])
         return s
     else:
-        s = f"{ef.valueStr(*val[0,1])}"
+        s = f"{ef.valueStr(*val[0,1], sci=sci)}"
         if not str(val[2]) == '1':
             s += r" ( {:} )".format(tab.units[qty])
         return s
+
+def changeUnitsVal(name, unit):
+    fact = exUnis[name].to(unit)
+    exVals[name] *= float(fact)
+    exVals[ef.delt(name)] *= float(fact)
 # %%

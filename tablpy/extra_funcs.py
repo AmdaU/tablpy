@@ -139,7 +139,7 @@ def lock_axes(ax):
     ax.set_ylim(ax.get_ylim())
 
 
-def precisionStr(x, delt):
+def precisionStr(x, delt, sci=False):
     """\n
 
     (x) the number you want to be represented correctly
@@ -151,29 +151,36 @@ def precisionStr(x, delt):
         x = abs(x)
     if x == 0:
         n = -int(np.floor(np.log10(delt)))
-        o = 0
+        order = 0
     else:
         n = int(np.floor(np.log10(x)))-int(np.floor(np.log10(delt)))
-        o = int(np.floor(np.log10(x)))
-    x = round(x, (n-o))
-    s = str(x*10**-o).replace('.', '')[:n+1]
-    l = len(s)
-    s += '0'*(n-l+1)
-    s += '0'*-(l-o-1)
-    s = '0'*-o + s
-    if o > 0:
-        s = s[:o+1] + '.' + s[o+1:]
+        order = int(np.floor(np.log10(x)))
+    x = round(x, (n-order))
+    s = str(x*10**-order)
+    s = s.replace('.', '')[:n+1]
+    s += '0'*(n-len(s)+1)
+    s += '0'*-(len(s)-order-1)
+    s = '0'*-order + s
+    if order > 0:
+        s = s[:order+1] + '.' + s[order+1:]
     else:
         s = s[0] + '.' + s[1:]
     if s[-1] == '.':
         s = s[:-1]
     return sig+s
-    
 
-def valueStr(val, uncertain):
-    return precisionStr(val, uncertain) + ' \pm  ' + precisionStr(uncertain, uncertain)
 
-# %%
+def valueStr(val, uncertain, sci=False):
+    sciend = ''
+    if sci:
+        o = 0 if val == 0 else int(np.floor(np.log10(val)))
+        val *= 10**-o
+        uncertain *= 10**-o
+        sciend = f'10^{{{o}}}'
+    return '(' + precisionStr(val, uncertain) + r' \pm  ' +\
+           precisionStr(uncertain, uncertain) + ')' + sciend
 
-#valueStr(12.23456, 0.000300)
+
+def latexify(string):
+    return sp.latex(sp.sympify(preSymp(string)))
 # %%
