@@ -43,8 +43,8 @@ def preSymp(string):
     """
     string = string.replace("{", "__0__").replace("}", "__1__")\
                    .replace('np.', '')
-    pat = (r"\\?\b(?!ln|log|sin|cos|tan|exp|atan|sqrt)"
-           r"[a-zA-Z]+[_0-9a-zA-Z({{)(}}),]*\b")
+    pat = (r"\\?<?\b(?!ln|log|sin|cos|tan|exp|atan|sqrt)"
+           r"[a-zA-Z]+[_0-9a-zA-Z({{)(}}),\^]*\b>?")
     a = [f"Symbol('{i}')" for i in re.findall(pat, string)]
     return re.sub(pat, r"{}", string).format(*a).replace("__0__", "{")\
                                                 .replace("__1__", "}")
@@ -153,7 +153,7 @@ def precisionStr(x, delt, sci=False):
         n = -int(np.floor(np.log10(delt)))
         order = 0
     else:
-        n = int(np.floor(np.log10(x)))-int(np.floor(np.log10(delt)))
+        n = int(np.floor(np.log10(np.abs(x))))-int(np.floor(np.log10(delt)))
         order = int(np.floor(np.log10(x)))
     x = round(x, (n-order))
     s = str(x*10**-order)
@@ -173,7 +173,7 @@ def precisionStr(x, delt, sci=False):
 def valueStr(val, uncertain, sci=False):
     sciend = ''
     if sci:
-        o = 0 if val == 0 else int(np.floor(np.log10(val)))
+        o = 0 if val == 0 else int(np.floor(np.log10(np.abs(val))))
         val *= 10**-o
         uncertain *= 10**-o
         sciend = f'10^{{{o}}}'

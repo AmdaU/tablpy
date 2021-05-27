@@ -430,7 +430,7 @@ class table:
         ax.set_ylabel(ef.ax_name(dt, yn))
 
     def fit(self, func, xn, yn, fig_ax=None, show=True, p0=None, maxfev=1000,
-            fit_label='fit', fit_color=None, **kwargs):
+            fit_label='fit', fit_color=None, showEq=False, **kwargs):
         """\n
 
         return optimal parameters of a function fitted on data
@@ -471,12 +471,14 @@ class table:
             expr = sp.sympify(ef.preSymp(lines[0][-1].replace('return ', '')))
             if fit_label == 'fit':
                 fit_label = "$"+sp.latex(expr)+"$"
-            values = {name: ef.precisionStr(out[name][0], out[ef.delt(name)][0])
-                            for name in names[1:]}
-            eq = sp.latex(expr)
-            for name, val in values.items():
-                eq = eq.replace(str(name), val)
-            ax.add_artist(AnchoredText('$'+ef.latexify(yn)+'='+eq+'$', loc=2))
+            if showEq:
+                values = {name: ef.precisionStr(out[name][0], out[ef.delt(name)][0])
+                                for name in names[1:]}
+                eq = sp.latex(expr)
+                for name, val in values.items():
+                    eq = eq.replace(str(name), val)
+                eq = eq.replace(names[0], ef.latexify(xn))
+                ax.add_artist(AnchoredText('$'+ef.latexify(yn)+r' \approx '+eq+'$', loc=2))
         if show:
             x = np.linspace(*ef.extrem(dt[xn]), 1000)
             ax.plot(x, func(x, *popt), label=fit_label, color=fit_color)
@@ -567,6 +569,11 @@ def genVal(name, formula, units=None, NoUncert=False):
     else:
         exUnis[name] = lamb(*(
             exUnis[str(i)] for i in expression_orig.free_symbols))
+        # const = exUnis[name].exctractConstant()
+        # exVals[name] *= float(const)
+        # exVals[ef.delt(name)] *= float(const)
+        # exUnis[name] = unit(str(exUnis[name].symb / const))
+
 
 
 def getVal(name):
