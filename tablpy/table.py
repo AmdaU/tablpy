@@ -189,23 +189,24 @@ class table:
             pos = len(self.data.columns)
         expression = sp.sympify(ef.preSymp(expression))
         self.formulas[name] = expression
+        symbols = tuple(expression.free_symbols)
 
         out = np.empty((len(self.data), 2))
 
         pre_dict = dict(zip([f"dummy{x}" for x in range(
-            len(expression.free_symbols))], map(str, expression.free_symbols)))
+            len(expression.free_symbols))], map(str, symbols)))
         expression = expression.subs({v: k for k, v in pre_dict.items()})
-        lamb = sp.lambdify(tuple(expression.free_symbols), expression)
+        lamb = sp.lambdify(symbols, expression)
         V_dict = self.data[:].to_dict("records")
         if not NoIncert:
             expr_incert = ef.formule_incertitude(self.formulas[name])
+            symbols_incert = tuple(expr_incert.free_symbols)
             pre_dict_i = dict(zip(
-                [f"dummy{x}" for x in range(len(expr_incert.free_symbols))],
-                map(str, expr_incert.free_symbols)
-            ))
+                [f"dummy{x}" for x in range(len(symbols_incert))],
+                map(str, symbols_incert)))
             expr_incert = expr_incert.subs(
                 {v: k for k, v in pre_dict_i.items()})
-            lamb_incert = sp.lambdify(tuple(expr_incert.free_symbols),
+            lamb_incert = sp.lambdify(symbols_incert,
                                       expr_incert)
         # Le cacul est fait ligne par ligne, probablement très optimisable
         for i in range(len(self.data)):
@@ -222,11 +223,13 @@ class table:
             self.units[name] = lamb(*(
                 self.units[str(i)]
                 if str(i) in self.units
-                else deepcopy(exUnis[str(i)]) for i in self.formulas[name].free_symbols)
+                else deepcopy(exUnis[str(i)]) for i in symbols)
             )
         self.data.insert(pos, name, out[:, 0])
         self.data.insert(pos + 1, ef.delt(name), out[:, 1])
-        self.fixUnits()
+        # print([self.units[str(i)].SIval if str(i) in self.units
+        #         else deepcopy(exUnis[str(i)]).SIval for i in tuple(self.formulas[name].free_symbols)], self.formulas, 'shit')
+        #self.fixUnits()
 
     def delCol(self, names):
         """Delets specified column of columns from the table"""
@@ -544,14 +547,14 @@ def genVal(name, formula, units=None, NoUncert=False):
     expression = sp.sympify(ef.preSymp(formula))
     expression_orig = deepcopy(expression)
     pre_dict = dict(zip([f"dummy{x}" for x in range(
-        len(expression.free_symbols))], map(str, expression.free_symbols)))
+        len(expression.free_symbols))], map(str, tuple(expression.free_symbols))))
     expression = expression.subs({v: k for k, v in pre_dict.items()})
     lamb = sp.lambdify(tuple(expression.free_symbols), expression)
     if not NoUncert:
         expr_incert = ef.formule_incertitude(ef.preSymp(formula))
         pre_dict_i = dict(zip(
             [f"dummy{x}" for x in range(len(expr_incert.free_symbols))],
-            map(str, expr_incert.free_symbols)
+            map(str, tuple(expr_incert.free_symbols))
         ))
         expr_incert = expr_incert.subs(
             {v: k for k, v in pre_dict_i.items()})
@@ -568,7 +571,7 @@ def genVal(name, formula, units=None, NoUncert=False):
             exUnis[name] = unit(units)
     else:
         exUnis[name] = lamb(*(
-            exUnis[str(i)] for i in expression_orig.free_symbols))
+            exUnis[str(i)] for i in tuple(expression_orig.free_symbols)))
         # const = exUnis[name].exctractConstant()
         # exVals[name] *= float(const)
         # exVals[ef.delt(name)] *= float(const)

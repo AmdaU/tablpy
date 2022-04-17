@@ -46,15 +46,15 @@ class unit:
         self.symb = sp.sympify(ef.preSymp(s))
         self.SIval = self.symb
         self.prefix = None
-        for var in self.SIval.free_symbols:
+        for var in tuple(self.SIval.free_symbols):
             if len(str(var)[1:]):
                 if sp.symbols(str(var)[1:]) in list(SIBT.keys()):
                     self.SIval *= sp.symbols(str(var)
                                              [1:]) / var * prefixs[str(var)[0]]
-        for var in self.SIval.free_symbols:
+        for var in tuple(self.SIval.free_symbols):
             if var in SIBT:
                 self.SIval = self.SIval.subs(var, SIBT[var])
-        for var in self.SIval.free_symbols:
+        for var in tuple(self.SIval.free_symbols):
             if len(str(var)[1:]):
                 if sp.symbols(str(var)[1:]) in SI:
                     self.SIval *= sp.symbols(str(var)
@@ -74,13 +74,13 @@ class unit:
 
     def __mul__(self, other):
         if type(other) == unit:
-            return unit(str(self.symb * other.symb))
+            return unit(str(self.SIval * other.SIval))
         elif type(other) in (int, float):
             return self
 
     def __rmul__(self, other):
         if type(other) == unit:
-            return unit(str(self.symb * other.symb))
+            return unit(str(self.SIval * other.SIval))
         elif type(other) in (int, float):
             return self
 
@@ -92,7 +92,7 @@ class unit:
 
     def __rtruediv__(self, other):
         if type(other) == unit:
-            return unit(str(self.symb / other.symb))
+            return unit(str(self.SIval / other.SIval))
         elif type(other) in (int, float):
             return unit(str(1 / self.symb))
 
@@ -137,6 +137,6 @@ class unit:
 
     def exctractConstant(self):
         const = self.symb
-        for var in const.free_symbols:
+        for var in tuple(const.free_symbols):
             const = const.subs(var, 1)
         return const
